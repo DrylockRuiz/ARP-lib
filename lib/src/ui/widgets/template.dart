@@ -75,30 +75,32 @@ class _TemplateWidgetState extends State<TemplateWidget> {
     return StreamBuilder(
       stream: feedback,
       builder: (context, snapshot) {
-        return SizedBox(
+        return Center(
+          child: SizedBox(
           height: MediaQuery.of(context).size.height,
           width: 493,
           child: Column(
             children: [
-              const SizedBox(height: 200),
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.5,
-                child: const rive.RiveAnimation.asset(
-                  'assets/img/error.riv',
-                  animations: [
-                    'Timeline 1',
-                  ],
+                const SizedBox(height: 200),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  child: const rive.RiveAnimation.asset(
+                    'assets/img/error.riv',
+                    animations: [
+                      'Timeline 1',
+                    ],
+                  ),
                 ),
-              ),
-              const Text(
-                'Something went wrong!',
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                snapshot.hasData ? snapshot.data![0] ?? '' : '',
-              ),
-            ],
+                const Text(
+                  'Something went wrong!',
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  snapshot.hasData ? snapshot.data![0] ?? '' : '',
+                ),
+              ],
+            ),
           ),
         );
       },
