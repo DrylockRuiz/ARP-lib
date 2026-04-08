@@ -5,8 +5,8 @@ import 'package:arp_lib/src/domain/controllers/blocs/settings_controller/setting
 
 
 class Settings {
-  final bool darkTheme;
-  final String language;
+  bool darkTheme;
+  String language;
 
   Settings({
     required this.darkTheme,
