@@ -1,8 +1,14 @@
+
+
+
+
+import 'dart:developer';
+
+import 'package:arp_lib/src/app.dart';
 import 'package:arp_lib/src/data/models/v1.0.0/interfaces/arp_interface.dart';
+import 'package:arp_lib/src/data/repositorys/repository_interface.dart';
 import 'package:arp_lib/src/utils/functions/repository_functions.dart';
 import 'package:postgres/postgres.dart';
-
-import 'repository_interface.dart'; // part of 'repository_interface.dart';
 
 class RepositoryPostgreSQLImpl implements RepositoryInterface {
   Connection? _connection;
@@ -11,7 +17,7 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
     connect();
   }
 
-  Future<bool> connect({String database = 'SEGO_drylogDB'}) async {
+  Future<bool> connect({String? database}) async {
     try {
       await _connection?.close();
       _connection = null;
@@ -27,7 +33,7 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
 
             // SEGOSQL03
             host: '10.9.3.67',
-            database: database,
+            database: database ?? 'SEGO_DryLog',
             username: 'dryloguser',
             password: 'Drylock18!',
           ),
@@ -37,12 +43,12 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
           settings: const ConnectionSettings(sslMode: SslMode.disable),
         );
 
-        print('Connection established!');
+        logger.info('Connection established!');
 
         return true;
       }
     } catch (e) {
-      print('Connection failed: $e');
+      logger.severe('Connection failed: $e');
     }
 
     _connection?.close();
@@ -53,13 +59,15 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
   @override
   Future<String?> create({
     required String table,
-    required ARPInterface  data,
+    required ARPInterface data,
   }) async {
     try {
       await connect();
 
-      Result? result =
-          await _connection?.execute("INSERT INTO $table ${data.toSql()}");
+      String query = "INSERT INTO $table ${data.toSql()}";
+      log(query);
+
+      Result? result = await _connection?.execute(query);
 
       String? id = (result![0][0] != null ? result[0][0].toString() : null);
 
@@ -67,7 +75,7 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
 
       return id;
     } catch (e) {
-      print('Create failed: $e');
+      logger.severe('Create failed: $e');
     }
 
     await _connection?.close();
@@ -75,17 +83,23 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
   }
 
   @override
-  Future<bool> delete({required String table, required String id}) async {
+  Future<bool> delete({
+    required String table,
+    required String id,
+  }) async {
     try {
       await connect();
 
-      await _connection?.execute("DELETE FROM $table WHERE stop_id = '$id';");
+      String query = "DELETE FROM $table WHERE stop_id = '$id';";
+
+      log(query);
+      await _connection?.execute(query);
 
       await _connection?.close();
 
       return true;
     } catch (e) {
-      print('Delete failed: $e');
+      logger.severe('Delete failed: $e');
     }
 
     await _connection?.close();
@@ -93,24 +107,30 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
   }
 
   @override
-  Future<ARPInterface ?> read(
-      {required String table, required String id}) async {
+  Future<ARPInterface?> read({
+    required String table,
+    required String idTag,
+    required String id,
+    String? filter,
+  }) async {
     try {
       await connect();
 
-      // final result = await _connection?.query("SELECT * FROM table_name WHERE id = @id", substitutionValues: {
-      //   'id': id,
-      // });
-      // if (result != null && result.isNotEmpty) {
-      //   return visionFromSql(result.first); // Adjust conversion as necessary
-      // } else {
+      String query = filter != null
+          ? 'SELECT * FROM $table WHERE $filter LIMIT 1'
+          : "SELECT * FROM $table WHERE $idTag = '$id' LIMIT 1";
 
-      await _connection?.close();
+      log(query);
+      final result = await _connection?.execute(query);
 
-      return null;
-      // }
+      if (result != null && result.isNotEmpty) {
+        ARPInterface? model = repositoryFunctions.fromSql(table, result.first);
+
+        await _connection?.close();
+        return model;
+      }
     } catch (e) {
-      print('Read failed: $e');
+      logger.severe('Read failed: $e');
     }
 
     await _connection?.close();
@@ -118,27 +138,27 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
   }
 
   @override
-  Future<List<ARPInterface >> readList(
-      {String columns = '*',
-      required String table,
-      ARPFilterInterface ? filter,
-      int limit = 500}) async {
-    List<ARPInterface > list = [];
+  Future<List<ARPInterface>> readList({
+    String columns = '*',
+    required String table,
+    ARPFilterInterface? filter,
+    int limit = 1000,
+    String? query,
+  }) async {
+    List<ARPInterface> list = [];
 
     try {
       await connect();
 
-      print(
-          "SELECT $columns FROM $table ${filter != null ? filter.toSql() : ''} LIMIT $limit");
+      String finalQuery = query ??
+          "SELECT $columns FROM $table ${filter != null ? filter.toSql() : ''} LIMIT $limit";
 
       // simple query
-      final result0 = await _connection?.execute(
-          "SELECT $columns FROM $table ${filter != null ? filter.toSql() : ''} LIMIT $limit");
+      log(finalQuery);
+      final result0 = await _connection?.execute(finalQuery);
 
-      for (var element in result0!) {
-        ARPInterface ? model = repositoryFunctions.fromSql(table, element);
-
-       
+      for (ResultRow element in result0!) {
+        ARPInterface? model = repositoryFunctions.fromSql(table, element);
 
         if (model != null) {
           list.add(model);
@@ -148,7 +168,7 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
       await _connection?.close();
       return list;
     } catch (e) {
-      print('ReadList failed: $e');
+      logger.severe('ReadList failed: $e');
     }
 
     await _connection?.close();
@@ -159,37 +179,51 @@ class RepositoryPostgreSQLImpl implements RepositoryInterface {
   Future<bool> update({
     required String table,
     required String id,
-    required ARPInterface  data,
+    required ARPInterface data,
   }) async {
     try {
       await connect();
 
-      print("UPDATE $table ${data.setSql()}");
-      await _connection?.execute("UPDATE $table ${data.setSql()}");
+      String query = "UPDATE $table ${data.setSql()}";
+      log(query);
+
+      await _connection?.execute(query);
 
       await _connection?.close();
       return true;
     } catch (e) {
-      print('Update failed: $e');
+      logger.severe('Update failed: $e');
     }
 
     await _connection?.close();
     return false;
   }
 
+  @override
+  void subscribe({
+    required String table,
+    required controller,
+    ARPFilterInterface? filter,
+    Function? onChange,
+  }) {
+    // Not implemented
+  }
+
+  @override
   Future<Result?> setCommand({
     String? database,
-    required String command,
+    required String query,
   }) async {
     try {
-      database != null ? await connect(database: database) : await connect();
+      await connect(database: database);
 
-      final result = await _connection?.execute(command);
+      logger.info(query);
+      final result = await _connection?.execute(query);
 
       await _connection?.close();
       return result;
     } catch (e) {
-      print('ReadList failed: $e');
+      logger.severe('ReadList failed: $e');
     }
 
     await _connection?.close();
