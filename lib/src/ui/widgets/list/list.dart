@@ -1,4 +1,5 @@
 import 'package:arp_lib/src/data/models/v1.0.0/interfaces/arp_interface.dart';
+import 'package:arp_lib/src/ui/widgets/template.dart';
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 import 'package:built_collection/built_collection.dart';
@@ -52,7 +53,7 @@ class _ListWidgetState extends State<ListWidget> {
         children: [
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.7,
-            child: const RiveAnimation.asset(
+            child: const RiveAsset(
               'assets/img/empty.riv',
               animations: [
                 'ManatimeAnimation empty',
