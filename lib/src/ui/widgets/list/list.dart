@@ -1,8 +1,7 @@
 import 'package:arp_lib/src/data/models/v1.0.0/interfaces/arp_interface.dart';
 import 'package:arp_lib/src/ui/widgets/template.dart';
-import 'package:flutter/material.dart';
-import 'package:rive/rive.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:flutter/material.dart';
 
 List<int> rowSelected = [0];
 
@@ -12,6 +11,7 @@ class ListWidget extends StatefulWidget {
   final Function onSelect;
   final Function getCells;
   final bool multiselect;
+  final ScrollController? scrollController;
 
   const ListWidget({
     super.key,
@@ -20,6 +20,7 @@ class ListWidget extends StatefulWidget {
     required this.onSelect,
     required this.getCells,
     this.multiselect = false,
+    this.scrollController,
   });
 
   @override
@@ -39,7 +40,7 @@ class _ListWidgetState extends State<ListWidget> {
 
           return _empty();
         } else {
-          return const Text('Starting list...');
+          return const Text('Rendering list...');
         }
       },
     );
@@ -53,7 +54,7 @@ class _ListWidgetState extends State<ListWidget> {
         children: [
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.7,
-            child: const RiveAsset(
+            child: RiveAsset (
               'assets/img/empty.riv',
               animations: [
                 'ManatimeAnimation empty',
@@ -63,9 +64,7 @@ class _ListWidgetState extends State<ListWidget> {
           //const SizedBox(height: 5),
           const Text(
             'No results',
-            style: TextStyle(
-              fontSize: 25,
-            ),
+            style: TextStyle(fontSize: 25),
           ),
         ],
       ),
@@ -74,6 +73,7 @@ class _ListWidgetState extends State<ListWidget> {
 
   Widget _buid(List<ARPInterface> list) {
     return SingleChildScrollView(
+      controller: widget.scrollController,
       scrollDirection: Axis.vertical,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -88,6 +88,7 @@ class _ListWidgetState extends State<ListWidget> {
                 label: Expanded(
                   child: Text(
                     widget.columns[index],
+                    // textAlign: TextAlign.center,
                     style: const TextStyle(fontStyle: FontStyle.italic),
                   ),
                 ),
