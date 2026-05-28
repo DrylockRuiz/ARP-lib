@@ -173,7 +173,7 @@ class _RiveAssetState extends State<RiveAsset> {
       _selector = StateMachineSelector.byIndex(0);
       _isFallbackActive = true;
     } else {
-      _selector = StateMachineSelector.byName(widget.animations[0]);
+      _selector = StateMachineSelector.byName(widget.animations![0]);
       _isFallbackActive = false;
     }
   }
