@@ -179,6 +179,13 @@ class _RiveAssetState extends State<RiveAsset> {
     super.dispose();
   }
 
+  Widget _buildError(Object? error) {
+    debugPrint('🚨 ERROR DE RIVE en ${widget.path}: $error');
+    return const Center(
+      child: Icon(Icons.error_outline, color: Colors.red, size: 40),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.animations.isEmpty) {
@@ -190,9 +197,7 @@ class _RiveAssetState extends State<RiveAsset> {
       stateMachineSelector: StateMachineSelector.byName(widget.animations[0]),
       builder: (context, state) => switch (state) {
         RiveLoading() => const Center(child: CircularProgressIndicator()),
-        RiveFailed() => const Center(
-            child: Icon(Icons.error_outline, color: Colors.red, size: 40),
-          ),
+        RiveFailed(:final error) => _buildError(error),
         RiveLoaded() => RiveWidget(
             controller: state.controller,
             fit: Fit.contain, // Corregido: Volvemos al 'Fit' propio de Rive
