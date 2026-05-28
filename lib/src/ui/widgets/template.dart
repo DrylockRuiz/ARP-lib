@@ -150,26 +150,42 @@ class RiveAsset extends StatefulWidget {
 
 class _RiveAssetState extends State<RiveAsset> {
   late FileLoader _fileLoader;
+  late StateMachineSelector _selector;
+  bool _isFallbackActive = false;
 
   @override
   void initState() {
     super.initState();
     _initLoader();
+    _prepareSelector();
   }
 
   void _initLoader() {
     _fileLoader = FileLoader.fromAsset(
-      widget.path, 
+      widget.path,
       riveFactory: Factory.rive,
     );
+  }
+
+  void _prepareSelector() {
+    // Si la lista viene vacía, usamos el índice 0 directamente por seguridad
+    if (widget.animations.isEmpty) {
+      _selector = StateMachineSelector.byIndex(0);
+      _isFallbackActive = true;
+    } else {
+      _selector = StateMachineSelector.byName(widget.animations[0]);
+      _isFallbackActive = false;
+    }
   }
 
   @override
   void didUpdateWidget(covariant RiveAsset oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.path != widget.path) {
+    // Si cambia el path o las animaciones, reiniciamos el estado del componente
+    if (oldWidget.path != widget.path || oldWidget.animations != widget.animations) {
       _fileLoader.dispose();
       _initLoader();
+      _prepareSelector();
     }
   }
 
@@ -179,29 +195,50 @@ class _RiveAssetState extends State<RiveAsset> {
     super.dispose();
   }
 
-  Widget _buildError(Object? error) {
-    debugPrint('🚨 ERROR DE RIVE en ${widget.path}: $error');
-    return const Center(
-      child: Icon(Icons.error_outline, color: Colors.red, size: 40),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (widget.animations.isEmpty) {
-      return const Center(child: Icon(Icons.warning, color: Colors.orange));
-    }
-
     return RiveWidgetBuilder(
       fileLoader: _fileLoader,
-      stateMachineSelector: StateMachineSelector.byName(widget.animations[0]),
-      builder: (context, state) => switch (state) {
-        RiveLoading() => const Center(child: CircularProgressIndicator()),
-        RiveFailed(:final error) => _buildError(error),
-        RiveLoaded() => RiveWidget(
-            controller: state.controller,
-            fit: Fit.contain, // Corregido: Volvemos al 'Fit' propio de Rive
-          ),
+      stateMachineSelector: _selector,
+      builder: (context, state) {
+        
+        // ¡AQUÍ ESTÁ LA MAGIA! Si el selector por nombre falla, nos auto-corregimos en vivo
+        if (state is RiveFailed && !_isFallbackActive) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                // Forzamos a Rive a agarrar la primera State Machine del archivo (.riv)
+                _selector = StateMachineSelector.byIndex(0);
+                _isFallbackActive = true; 
+              });
+            }
+          });
+        }
+
+        return switch (state) {
+          RiveLoading() => const Center(child: CircularProgressIndicator()),
+          
+          // Si el fallback por índice también llegara a fallar, recién ahí muestra la alerta con el texto del error real
+          RiveFailed(:final error) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                  const SizedBox(height: 4),
+                  Text(
+                    error.toString(),
+                    style: const TextStyle(color: Colors.red, fontSize: 10),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            
+          RiveLoaded() => RiveWidget(
+              controller: state.controller,
+              fit: Fit.contain,
+            ),
+        };
       },
     );
   }
