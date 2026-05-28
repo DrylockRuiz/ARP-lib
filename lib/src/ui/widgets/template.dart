@@ -90,7 +90,7 @@ Widget errorTemplate(
                 height: MediaQuery.of(context).size.height * 0.5,
                 child: const RiveAsset(
                   'assets/img/error.riv',
-                  animations: ['Timeline 1'],
+                  // animations: ['Timeline 1'],
                 ),
               ),
               const Text(
@@ -136,12 +136,12 @@ Widget loadingTemplate(BuildContext context, title) {
 
 class RiveAsset extends StatefulWidget {
   final String path;
-  final List<String> animations;
+  final List<String>? animations;
 
   const RiveAsset(
     this.path, {
     super.key,
-    required this.animations,
+    this.animations,
   });
 
   @override
@@ -169,7 +169,7 @@ class _RiveAssetState extends State<RiveAsset> {
 
   void _prepareSelector() {
     // Si la lista viene vacía, usamos el índice 0 directamente por seguridad
-    if (widget.animations.isEmpty) {
+    if (widget.animations == null || widget.animations!.isEmpty) {
       _selector = StateMachineSelector.byIndex(0);
       _isFallbackActive = true;
     } else {
