@@ -138,7 +138,8 @@ class RiveAsset extends StatefulWidget {
   final String path;
   final List<String> animations;
 
-  const RiveAsset(this.path,{
+  const RiveAsset(
+    this.path, {
     super.key,
     required this.animations,
   });
@@ -148,37 +149,61 @@ class RiveAsset extends StatefulWidget {
 }
 
 class _RiveAssetState extends State<RiveAsset> {
-  late final FileLoader _fileLoader;
+  late FileLoader _fileLoader;
 
   @override
   void initState() {
     super.initState();
-    // Inicializamos el cargador nativo una sola vez
-    _fileLoader = FileLoader.fromAsset(widget.path, riveFactory: Factory.rive);
+    _initLoader();
+  }
+
+  void _initLoader() {
+    // Inicializamos el cargador nativo apuntando correctamente al asset de Flutter
+    _fileLoader = FileLoader.fromAsset(
+      widget.path, 
+      riveFactory: Factory.rive,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant RiveAsset oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Si la ruta cambia, liberamos el anterior y creamos uno nuevo
+    if (oldWidget.path != widget.path) {
+      _fileLoader.dispose();
+      _initLoader();
+    }
   }
 
   @override
   void dispose() {
-    // Liberamos los recursos de C++ al destruir el widget
+    // Liberamos los recursos de C++ al destruir el widget de forma segura
     _fileLoader.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Validamos que la lista no venga vacía para evitar errores de índice
+    if (widget.animations.isEmpty) {
+      return const Center(child: Icon(Icons.warning, color: Colors.orange));
+    }
+
     return RiveWidgetBuilder(
       fileLoader: _fileLoader,
+      // IMPORTANTE: Asegúrate de que 'Timeline 1' sea el nombre de la State Machine en Rive
       stateMachineSelector: StateMachineSelector.byName(widget.animations[0]),
       builder: (context, state) => switch (state) {
         RiveLoading() => const Center(child: CircularProgressIndicator()),
         RiveFailed() => const Center(
-          child: Icon(Icons.error_outline, color: Colors.red, size: 40),
-        ),
+            child: Icon(Icons.error_outline, color: Colors.red, size: 40),
+          ),
         RiveLoaded() => RiveWidget(
-          controller: state.controller,
-          fit: Fit.contain,
-        ),
+            controller: state.controller,
+            fit: BoxFit.contain, // Corregido: En Flutter se usa BoxFit
+          ),
       },
     );
   }
+}
 }
