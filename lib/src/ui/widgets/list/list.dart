@@ -56,9 +56,7 @@ class _ListWidgetState extends State<ListWidget> {
             height: MediaQuery.of(context).size.height * 0.7,
             child: RiveAsset (
               'assets/img/empty.riv',
-              animations: [
-                'ManatimeAnimation empty',
-              ],
+              // animations: ['ManatimeAnimation empty'],
             ),
           ),
           //const SizedBox(height: 5),
