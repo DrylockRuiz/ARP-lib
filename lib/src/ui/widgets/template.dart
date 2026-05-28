@@ -158,7 +158,6 @@ class _RiveAssetState extends State<RiveAsset> {
   }
 
   void _initLoader() {
-    // Inicializamos el cargador nativo apuntando correctamente al asset de Flutter
     _fileLoader = FileLoader.fromAsset(
       widget.path, 
       riveFactory: Factory.rive,
@@ -168,7 +167,6 @@ class _RiveAssetState extends State<RiveAsset> {
   @override
   void didUpdateWidget(covariant RiveAsset oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Si la ruta cambia, liberamos el anterior y creamos uno nuevo
     if (oldWidget.path != widget.path) {
       _fileLoader.dispose();
       _initLoader();
@@ -177,21 +175,18 @@ class _RiveAssetState extends State<RiveAsset> {
 
   @override
   void dispose() {
-    // Liberamos los recursos de C++ al destruir el widget de forma segura
     _fileLoader.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Validamos que la lista no venga vacía para evitar errores de índice
     if (widget.animations.isEmpty) {
       return const Center(child: Icon(Icons.warning, color: Colors.orange));
     }
 
     return RiveWidgetBuilder(
       fileLoader: _fileLoader,
-      // IMPORTANTE: Asegúrate de que 'Timeline 1' sea el nombre de la State Machine en Rive
       stateMachineSelector: StateMachineSelector.byName(widget.animations[0]),
       builder: (context, state) => switch (state) {
         RiveLoading() => const Center(child: CircularProgressIndicator()),
@@ -200,7 +195,7 @@ class _RiveAssetState extends State<RiveAsset> {
           ),
         RiveLoaded() => RiveWidget(
             controller: state.controller,
-            fit: BoxFit.contain, // Corregido: En Flutter se usa BoxFit
+            fit: Fit.contain, // Corregido: Volvemos al 'Fit' propio de Rive
           ),
       },
     );
