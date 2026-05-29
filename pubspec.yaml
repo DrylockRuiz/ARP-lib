@@ -12,10 +12,10 @@ dependencies:
     sdk: flutter
   plugin_platform_interface: ^2.1.8
 
-  flutter_form_bloc: ^0.31.0
-  #  git:
-  #    url: https://github.com/Cavin6080/form_bloc.git
-  #    path: packages/flutter_form_bloc
+  flutter_form_bloc: # ^0.31.0
+    git:
+      url: https://github.com/Cavin6080/form_bloc.git
+      path: packages/flutter_form_bloc
   bloc_concurrency: ^0.2.5
   
   flutter_localized_locales: ^2.0.5
